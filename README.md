@@ -5,6 +5,10 @@ An environment for playing Cribbage in OpenAI gym (2-4 players).
 
 The gym environment can be installed using `python setup.py install`.
 
+# development
+
+Run `pip install -e .`.
+
 # usage
 
 The environment can be imported after install via:
