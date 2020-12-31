@@ -274,10 +274,11 @@ class CribbageEnv(gym.Env):
     of point following the last card played. TODO: The
     """
 
-    def __init__(self, n_players=2, verbose=False):
+    def __init__(self, n_players=2, verbose=False, debug=False):
         super(CribbageEnv, self).__init__()
 
         self.n_players = n_players
+        self.verbose = verbose
         if self.n_players < 2 or self.n_players > 4:
             raise ValueError("Cribbage is played by 2-4 players.")
 
@@ -288,7 +289,7 @@ class CribbageEnv(gym.Env):
 
         self.logger = logging.getLogger(__name__)
 
-        if verbose:
+        if debug:
             self.logger.setLevel(logging.DEBUG)
 
         self.initialized = False
@@ -298,6 +299,8 @@ class CribbageEnv(gym.Env):
         Resets the hand, additionally clearing the scoreboard.
         """
         self.logger.debug("New Game!")
+        if self.verbose:
+            print("GAME\tNew Game!")
 
         # Reset the persistant scores of all players.
         self.scores = np.zeros(self.n_players, dtype=np.uint8)
@@ -342,6 +345,8 @@ class CribbageEnv(gym.Env):
             self.logger.debug(
                 "Player {} discards {} to the crib".format(self.player, card)
             )
+            if self.verbose:
+                print("GAME\tPlayer {} discards to the crib".format(self.player))
             # Move card from hand to crib.
             self.hands[self.player].discard(card)
             self.crib.add_(card)
@@ -356,17 +361,20 @@ class CribbageEnv(gym.Env):
                 self.phase = 1
                 self.starter = [self.deck.deal()]
                 self.logger.debug("Starter drawn={}".format(self.starter))
+                if self.verbose:
+                    print("GAME\tStarter drawn={}".format(self.starter))
 
                 if self.starter[0].rank == "J":
                     reward = 2
                     self.logger.debug("Two for his (the dealer's) heels!")
+                    if self.verbose:
+                        print("SCORE\tTwo for player {} (the dealer's) heels!".format(self.dealer))
 
                 # Start next phase from the left of the dealer.
                 self.player = self.next_player(self.player, from_dealer=True)
-                # self.logger.debug("Crib: {}".format(self.crib))
-                self.logger.debug(
-                    f"Crib complete: {self.crib}  Move to The Play."
-                )
+                self.logger.debug("Crib: {}".format(self.crib))
+                if self.verbose:
+                    print("GAME\tMove to the Play")
 
             else:
                 self.player = self.next_player(self.player)
@@ -387,6 +395,9 @@ class CribbageEnv(gym.Env):
 
         # The Play.
         elif self.phase == 1:
+            if self.verbose:
+                print("SCORE\tScore after the Deal: Player 0 = {} vs. Player 1 = {}".format(
+                    self.scores[0], self.scores[1]))
             self.logger.debug(
                 "Player {} plays {}".format(self.player, card)
             )
@@ -397,6 +408,10 @@ class CribbageEnv(gym.Env):
             self.table.add_(card)
             reward = self._evaluate_play()
             self._update_table_value()
+            if self.verbose:
+                print("GAME\tPlayer {} plays {} for {}".format(self.player, card, self.table_value))
+            if self.verbose and reward > 0:
+                print('SCORE\tPlayer {} earned {} points'.format(self.player, reward))
 
             # Check to see who can play next.
             counts, playable_hands = self._count_playable_cards()
@@ -411,15 +426,21 @@ class CribbageEnv(gym.Env):
                 if self.table_value == MAX_TABLE_VALUE:
                     reward += 2
                     self.logger.debug("reward+2 for MAX_TABLE_VALUE.")
+                    if self.verbose:
+                        print("SCORE\t+2 for for player {} for {}".format(self.last_player, MAX_TABLE_VALUE))
                 else:
                     reward += 1
                     self.logger.debug("reward+1 for last player.")
+                    if self.verbose:
+                        print("SCORE\t+1 for for player {} for go".format(self.last_player))
 
                 remaining_cards = self._count_remaining_cards()
 
                 # Move onto The Show.
                 if remaining_cards == 0:
                     self.logger.debug("No cards left, time for The Show.")
+                    if self.verbose:
+                        print("GAME\tMove to the Show")
                     self.phase = 2
                     self.player = self.next_player(self.player,
                                                    from_dealer=True)
@@ -430,6 +451,8 @@ class CribbageEnv(gym.Env):
                         "Resetting table! table_value={} n_cards={}".format(
                             self.table_value, remaining_cards)
                     )
+                    if self.verbose:
+                        print("GAME\tReset table")
                     self._reset_table()
                     self.player = self.next_player(self.player)
                     counts, playable_hands = self._count_playable_cards()
@@ -458,7 +481,9 @@ class CribbageEnv(gym.Env):
 
         # The Show.
         elif self.phase == 2:
-
+            if self.verbose:
+                print("SCORE\tScore after the Deal: Player 0 = {} vs. Player 1 = {}".format(
+                    self.scores[0], self.scores[1]))
 
             # Calculate points for self.player.
             reward = self._evaluate_show()
@@ -472,6 +497,7 @@ class CribbageEnv(gym.Env):
 
             # Keep track of the player's total score.
             self.scores[self.last_player] += reward
+
             player_score, opponent_scores = self._get_scores()
             self.state = State(
                 Stack([]),
@@ -624,6 +650,8 @@ class CribbageEnv(gym.Env):
                     playable_hands[self.player],
                     self.hands[self.player])
                 )
+                if self.verbose:
+                    print("GAME\tGo! Skip player {}".format(self.player))
                 self.player = self.next_player(self.player)
 
     def _reset_table(self):
@@ -645,6 +673,10 @@ class CribbageEnv(gym.Env):
         dealer. Each user receives the appropriate number of cards.
         """
         self.logger.debug("New hand!")
+        if self.verbose:
+            print("SCORE\tScore after the Show: Player 0 = {} vs. Player 1 = {}".format(
+                self.scores[0], self.scores[1]))
+            print("GAME\tNew hand")
 
         self.deck = Deck()
 
@@ -667,6 +699,8 @@ class CribbageEnv(gym.Env):
                                                             else dealer
 
         self.logger.debug("Player {} has the crib".format(self.dealer))
+        if self.verbose:
+            print("GAME\tPlayer {} has the crib".format(self.dealer))
         self.player = copy(self.dealer)
         self.last_player = copy(self.dealer)
 
@@ -723,6 +757,10 @@ class CribbageEnv(gym.Env):
         self.logger.debug('SHOW: player {} earned {} points'.format(
             self.player, points)
         )
+        if self.verbose:
+            print('SCORE\tPlayer {} earned {} points with hand {} and starter {}'.format(self.player, points,
+                                                                                         self.played[self.player],
+                                                                                         self.starter))
 
         if self.player == self.dealer:
             crib_points = evaluate_cards(
@@ -730,11 +768,14 @@ class CribbageEnv(gym.Env):
                 starter=self.starter[0],
                 is_crib=True
             )
+            if self.verbose:
+                print('SCORE\tPlayer {} earned {} points with crib {} and starter {}'.format(self.player, crib_points,
+                                                                                             self.crib,
+                                                                                             self.starter))
             points += crib_points
             self.logger.debug('SHOW CRIB: player {} earned {} points'.format(
                 self.player, points)
             )
-
         return(points)
 
 
