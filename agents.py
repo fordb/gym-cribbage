@@ -117,6 +117,8 @@ class Greedy(HighCard):
         points = []
         for c in hand:
             _env = copy.deepcopy(env)
+            _env.verbose = False
+            _env.debug = False
             _, reward, _, _ = _env.step(c)
             points.append(reward)
         # if no points to be had, discard highest card
