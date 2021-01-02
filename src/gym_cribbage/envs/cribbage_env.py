@@ -395,9 +395,6 @@ class CribbageEnv(gym.Env):
 
         # The Play.
         elif self.phase == 1:
-            if self.verbose:
-                print("SCORE\tScore after the Deal: Player 0 = {} vs. Player 1 = {}".format(
-                    self.scores[0], self.scores[1]))
             self.logger.debug(
                 "Player {} plays {}".format(self.player, card)
             )
@@ -427,12 +424,12 @@ class CribbageEnv(gym.Env):
                     reward += 2
                     self.logger.debug("reward+2 for MAX_TABLE_VALUE.")
                     if self.verbose:
-                        print("SCORE\t+2 for for player {} for {}".format(self.last_player, MAX_TABLE_VALUE))
+                        print("SCORE\tPlayer {} earned 2 points for {}".format(self.last_player, MAX_TABLE_VALUE))
                 else:
                     reward += 1
                     self.logger.debug("reward+1 for last player.")
                     if self.verbose:
-                        print("SCORE\t+1 for for player {} for go".format(self.last_player))
+                        print("SCORE\tPlayer {} earns 1 point for go".format(self.last_player))
 
                 remaining_cards = self._count_remaining_cards()
 
@@ -481,9 +478,6 @@ class CribbageEnv(gym.Env):
 
         # The Show.
         elif self.phase == 2:
-            if self.verbose:
-                print("SCORE\tScore after the Deal: Player 0 = {} vs. Player 1 = {}".format(
-                    self.scores[0], self.scores[1]))
 
             # Calculate points for self.player.
             reward = self._evaluate_show()
