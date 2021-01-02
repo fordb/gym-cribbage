@@ -5,7 +5,7 @@ import random as rand
 import pandas as pd
 import logging
 import copy
-
+import pprint
 
 
 
@@ -76,8 +76,12 @@ def play_game(game_id, env, p1, p2):
         
         # end of a hand
         if state.phase == 0 and prev_phase == 2:
+            p1_hand = hand_logger['p1_deal'] + hand_logger['p1_play'] + hand_logger['p1_show']
+            p2_hand = hand_logger['p2_deal'] + hand_logger['p2_play'] + hand_logger['p2_show']            
+            print("Score Diff: {}".format(p1_hand - p2_hand))
             hand_logger['p1_score'] = env.scores[0]
             hand_logger['p2_score'] = env.scores[1]
+            pprint.pprint(hand_logger)
             
             # add to logger
             for key, value in hand_logger.items():
@@ -114,9 +118,9 @@ def play_game(game_id, env, p1, p2):
 
 
 if __name__ == '__main__':
-    env = CribbageEnv()
-    p1 = Player()
-    p2 = Player()
+    env = CribbageEnv(verbose=False)
+    p1 = MonteCarlo(player_num=0, trials=100, verbose=True)
+    p2 = Greedy()
 
     df = pd.DataFrame()
 
@@ -126,6 +130,7 @@ if __name__ == '__main__':
         logger = play_game(g, env, p1, p2)
         logger_df = pd.DataFrame.from_dict(logger)
         df = df.append(logger_df)
+        print(df.tail(1)[['p1_score', 'p2_score']])
 
     df = df.reset_index()
-    print(df)
+    df.to_csv("~/Desktop/mc_game-100.csv", index=False)
