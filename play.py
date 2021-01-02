@@ -55,10 +55,16 @@ def play_game(game_id, env, p1, p2):
         if state.phase == 0:
             if state.hand_id == 0:
                 state, reward, done, debug = env.step(p1.play(env))
-                hand_logger['p1_deal'] += reward
+                if env.dealer == 0:
+                    hand_logger['p1_deal'] += reward
+                else:
+                    hand_logger['p2_deal'] += reward
             else:
                 state, reward, done, debug = env.step(p2.play(env))
-                hand_logger['p2_deal'] += reward
+                if env.dealer == 0:
+                    hand_logger['p1_deal'] += reward
+                else:
+                    hand_logger['p2_deal'] += reward
         elif state.phase == 1:
             if state.hand_id == 0:
                 state, reward, done, debug = env.step(p1.play(env))

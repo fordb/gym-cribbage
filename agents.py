@@ -159,10 +159,16 @@ class MonteCarlo(Greedy):
                         card1 = None
                     else:
                         state, reward, done, debug = env.step(card2)
-                    reward_diff += reward
+                    if env.dealer == self.player_num:
+                        reward_diff += reward
+                    else:
+                        reward_diff -= reward
                 else:
                     state, reward, done, debug = env.step(opp_strategy.play(env))
-                    reward_diff -= reward
+                    if env.dealer == self.player_num:
+                        reward_diff += reward
+                    else:
+                        reward_diff -= reward
             elif state.phase == 1:
                 if state.hand_id == self.player_num:
                     state, reward, done, debug = env.step(my_strategy.play(env))
